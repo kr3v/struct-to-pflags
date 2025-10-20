@@ -14,7 +14,7 @@ A code generator tool that converts Go structs into pflags (Persistent Flags) co
 ## Installation
 
 ```bash
-go build -o struct-to-pflags
+go install github.com/kr3v/struct-to-pflags@latest
 ```
 
 ## Usage
@@ -22,7 +22,7 @@ go build -o struct-to-pflags
 ### Command Line
 
 ```bash
-./struct-to-pflags -file <path-to-file.go> -struct <StructName> [-output <output-file.go>] [-package <package-name>]
+struct-to-pflags -file <path-to-file.go> -struct <StructName> [-output <output-file.go>] [-package <package-name>]
 ```
 
 ### Using with go:generate
@@ -30,7 +30,7 @@ go build -o struct-to-pflags
 Add a `go:generate` directive at the top of your Go file:
 
 ```go
-//go:generate go run ./main.go -file config.go -struct config -output config_flags.go
+//go:generate go run ./main.go -file config.go -struct config -output config.gen.go
 
 package mypackage
 
@@ -47,88 +47,11 @@ Then run:
 go generate ./...
 ```
 
-This will automatically generate `config_flags.go` with the pflags code.
+This will automatically generate `config.gen.go` with the pflags code.
 
 ### Example
 
-Given a file `example.go`:
-
-```go
-package main
-
-type config struct {
-    // "path to file where logs will be written"
-    logFile         string
-    // "enable debug mode"
-    debug           bool
-    // "port number to listen on"
-    port            int
-    // "internal version field"
-    version         string `pflags:"-"`
-}
-
-var defaultConfig = config{
-    logFile: "/var/log/app.log",
-    debug:   false,
-    port:    8080,
-    version: "v1.0.0",
-}
-```
-
-Run the generator:
-
-```bash
-./struct-to-pflags -file example.go -struct config
-```
-
-Output:
-
-```go
-package main
-
-import (
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-)
-
-const (
-	flagLogFile = "log-file"
-	flagDebug   = "debug"
-	flagPort    = "port"
-)
-
-func withFlags(cmd *cobra.Command) *cobra.Command {
-	pflags := cmd.PersistentFlags()
-	pflags.String(flagLogFile, "/var/log/app.log", "path to file where logs will be written")
-	pflags.Bool(flagDebug, false, "enable debug mode")
-	pflags.Int(flagPort, 8080, "port number to listen on")
-	return cmd
-}
-
-func loadConfig(flags *pflag.FlagSet, version string) (*config, error) {
-	logFile, err := flags.GetString(flagLogFile)
-	if err != nil {
-		return nil, err
-	}
-
-	debug, err := flags.GetBool(flagDebug)
-	if err != nil {
-		return nil, err
-	}
-
-	port, err := flags.GetInt(flagPort)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config{
-		logFile: logFile,
-		debug:   debug,
-		port:    port,
-		version: version,
-	}, nil
-}
-```
+Check the [example directory](./example) for a complete example.
 
 ## Supported Types
 
@@ -173,3 +96,18 @@ var defaultConfig = config{
 ```
 
 If no default variable is found, type-appropriate zero values are used.
+
+## Linter
+
+```go
+struct-to-pflags validate-rec -dir <directory>
+```
+
+Looks for all the `go:generate` directives in the specified directory (recursively) and validates the generated files
+against the source structs.
+
+Check [validate-rec-output](example/validate-rec-output) for an example output.
+
+```shell
+$ struct-to-pflags validate-rec -dir=./example >./example/validate-rec-output 2>&1; echo "exit_code =" $? >> ./example/validate-rec-output
+```
