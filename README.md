@@ -14,7 +14,6 @@ A code generator tool that converts Go structs into pflags (Persistent Flags) co
 ## Installation
 
 ```bash
-cd hack/dima-stuff/struct-to-pflags
 go build -o struct-to-pflags
 ```
 
@@ -31,7 +30,7 @@ go build -o struct-to-pflags
 Add a `go:generate` directive at the top of your Go file:
 
 ```go
-//go:generate go run ../../hack/dima-stuff/struct-to-pflags/main.go -file config.go -struct config -output config_flags.go
+//go:generate go run ./main.go -file config.go -struct config -output config_flags.go
 
 package mypackage
 
@@ -144,8 +143,7 @@ func loadConfig(flags *pflag.FlagSet, version string) (*config, error) {
 
 Field names are automatically converted from camelCase to kebab-case for flag names:
 - `logFile` → `log-file`
-- `enableCriuLogs` → `enable-criu-logs`
-- `criProxyRunDir` → `cri-proxy-run-dir`
+- `enableLogs` → `enable-logs`
 
 ## Skipping Fields
 
